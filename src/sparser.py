@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-phrase = "Cetait un soir de pluie . Lenfant etait seul . Bien que , ce ne fut plus un enfant .  Mais au font de sa poche , il avait su preserver quelques reves . Et puis deux-trois sous . Et puis un morceau de pain rance .   Il ne lui en restait plus beaucoup .  Or il faisait nuit . Et comme ses semblables cherchaient au sol pitances et miettes despoir , lui cherchait au ciel des traces detoiles . Mais la pluie mouillait ses yeux gris . Le vent tordait son ame . La gravite le clouait a une terre hostile et froide .  Nul ne pouvait le voir . Il etait trop maigre .   Mais quand il vous souriait , votre cœur le sentait , chaleur tendre entre deux bourrasques .   En allant ainsi , pousse par le hasard ,il senfonçait dans la ville .  La femme ny etait pour rien .Elle naurait pas pu leviter . Personne naurait pu . Car soudain , a la sortie dun virage , elle le percuta .   Pour elle , se fut une vague caresse ou meme , lidee dune caresse . Pour lui , le choc fut terriblement violant . Le cœur de la femme avait brise le sien . La beaute de la femme avait brûle sa laideur . Et les quelques reves quil gardait dans sa poche etaient tombes dans la boue . La femme , pressee par son elan , continua sa route . Insoucieuse , elle pietina les reves gisants , avant de disparaître .  Prive du peu qui lui restait ,lenfant semietta et le temps leparpilla comme de la quelconque cendre .  Une petite fille heureuse courrait , suivit par sa mere , bienveillante . Ses yeux , qui savaient les details invisibles ,trouverent les reves perdus . Dans un rire eclatant de joie simple ,elle les ramassa pour les montrer a sa maman .  Celle-ci fit une grimasse et gifla les mains salies de la petite pour en ejecter les reves et la boue .  La boue eclaboussa une vitrine .  Les reves gagnerent les cieux .  Entre deux nuages gris brillerent faiblement quelques etoiles , insaisissables ."
+phrase = ". Cetait un soir de pluie . Lenfant etait seul . Bien que , ce ne fut plus un enfant .  Mais au font de sa poche , il avait su preserver quelques reves . Et puis deux-trois sous . Et puis un morceau de pain rance .   Il ne lui en restait plus beaucoup .  Or il faisait nuit . Et comme ses semblables cherchaient au sol pitances et miettes despoir , lui cherchait au ciel des traces detoiles . Mais la pluie mouillait ses yeux gris . Le vent tordait son ame . La gravite le clouait a une terre hostile et froide .  Nul ne pouvait le voir . Il etait trop maigre .   Mais quand il vous souriait , votre cœur le sentait , chaleur tendre entre deux bourrasques .   En allant ainsi , pousse par le hasard ,il senfonçait dans la ville .  La femme ny etait pour rien .Elle naurait pas pu leviter . Personne naurait pu . Car soudain , a la sortie dun virage , elle le percuta .   Pour elle , se fut une vague caresse ou meme , lidee dune caresse . Pour lui , le choc fut terriblement violant . Le cœur de la femme avait brise le sien . La beaute de la femme avait brûle sa laideur . Et les quelques reves quil gardait dans sa poche etaient tombes dans la boue . La femme , pressee par son elan , continua sa route . Insoucieuse , elle pietina les reves gisants , avant de disparaître .  Prive du peu qui lui restait ,lenfant semietta et le temps leparpilla comme de la quelconque cendre .  Une petite fille heureuse courrait , suivit par sa mere , bienveillante . Ses yeux , qui savaient les details invisibles ,trouverent les reves perdus . Dans un rire eclatant de joie simple ,elle les ramassa pour les montrer a sa maman .  Celle-ci fit une grimasse et gifla les mains salies de la petite pour en ejecter les reves et la boue .  La boue eclaboussa une vitrine .  Les reves gagnerent les cieux .  Entre deux nuages gris brillerent faiblement quelques etoiles , insaisissables ."
 
 import re
 import operator
@@ -26,7 +26,7 @@ def random_pull(distribution): # dist. is a list of coulpes
 splited = re.split('[ \-]+',phrase )
 
 TAU = 2
-RANGE = 22
+RANGE = 15
 
 word_followings = {} # word : list of (word/concept, relative position) + weights
 
@@ -39,17 +39,17 @@ global_layer = [] # global position : list of concepts or words
 
 def treat(concept1,concept2,word_followings,j):
     if concept1 in word_followings:
-        if concept2 in word_followings[concept1]:
-            if j in word_followings[concept1][concept2]:
-                word_followings[concept1][concept2][j] += 1
+        if j in word_followings[concept1]:
+            if concept2 in word_followings[concept1][j]:
+                word_followings[concept1][j][concept2] += 1
             else:
-                word_followings[concept1][concept2].update({j:1})
+                word_followings[concept1][j].update({concept2:1})
         else:
-            word_followings[concept1].update({concept2 : {j:1}})
+            word_followings[concept1].update({j : {concept2:1}})
     else:
-        word_followings[concept1] = {concept2 : {j:1}}
+        word_followings[concept1] = {j : {concept2:1}}
 
-    return word_followings[concept1][concept2][j]
+    return word_followings[concept1][j][concept2]
 
 
 i = 0
@@ -119,7 +119,7 @@ print "       ################# TRAINING :"
 #print "____________"
 #    print concept_followings
 #    print "____________"
-print splited
+#print splited
 #    print '____________'
 #print concept_keys
 print
@@ -129,7 +129,7 @@ current_word = '.'
 current_pos = 0
 result = [current_word]
 
-length = 10
+length = 30
 
 word_score = {} # position(global), word : score
 concept_score = {} # position(global), concept : score
@@ -151,17 +151,18 @@ def score_update(concept, pos, score, score_dict):
 for i in range(length):
 
     # word -> word :
-    for word in word_followings[current_word]:
-        for pos in word_followings[current_word][word]:
-            score_update(word,i+pos,2*word_followings[current_word][word][pos],word_score)
+    for pos in word_followings[current_word]:
+        for word in word_followings[current_word][pos]:
+            score_update(word,i+pos,word_followings[current_word][pos][word],word_score)
 
     # word -> concept :
     if current_word in concept_followings:
-        for concept in concept_followings[current_word]:
-            if concept in concept_keys:
-                pos,word,score = concept_keys[concept] # maybe we should also train the "word -> concept", but could be redondant
-                score_update(word,i+pos,score,concept_score)
-                #active_concepts[i].add(concept)
+        for pos in concept_followings[current_word]:
+            for concept in concept_followings[current_word][pos]:
+                if concept in concept_keys:
+                    pos,word,score = concept_keys[concept] # maybe we should also train the "word -> concept", but could be redondant
+                    score_update(word,i+pos,score,concept_score)
+                    #active_concepts[i].add(concept)
 
     # concept ->
     if i in concept_score:
@@ -169,14 +170,19 @@ for i in range(length):
 
             # concept -> concept :
             if concept1 in concept_followings:
-                for concept2 in concept_followings[concept1]:
-                    for pos in concept_followings[concept1][concept2]:
-                        score_update(concept2,i+pos,concept_followings[concept1][concept2][pos],concept_score)
+                for pos in concept_followings[concept1]:
+                    for concept2 in concept_followings[concept1][pos]:
+                        score_update(concept2,i+pos,concept_followings[concept1][pos][concept2],concept_score)
 
                 # concept -> word :
-                for word in concept_word[concept1]:
-                    for pos in concept_word[concept1][word]:
-                        score_update(word,i+pos,concept_word[concept1][word][pos],word_score)
+                for pos in concept_word[concept1]:
+                    for word in concept_word[concept1][pos]:
+                        score_update(word,i+pos,concept_word[concept1][pos][word],word_score)
+
+    for word in frozenset(word_score[i+1]):
+        #               word_following[current_word][position][:]
+        if word not in word_followings[current_word][1]:
+            del word_score[i+1][word]
 
     distribution = word_score[i+1].items()
     current_word = random_pull(distribution)
